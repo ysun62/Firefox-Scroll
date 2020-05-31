@@ -1,24 +1,89 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+/*global chrome*/
+import React, { useEffect, useState } from "react";
+import Switch from "react-switch";
+import "./App.css";
 
 function App() {
+  const [status, setStatus] = useState("Enabled");
+
+  // After popup component mounts, set the tate based
+  // on the data retrieved from localstorage
+  useEffect(() => {
+    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      chrome.storage.sync.get(`${tabs[0].url}`, (data) => {
+        switch (data[tabs[0].url]) {
+          case "Disabled":
+            setStatus("Disabled");
+            chrome.tabs.sendMessage(tabs[0].id, "disable");
+            break;
+
+          case "Enabled":
+            setStatus("Enabled");
+            chrome.tabs.sendMessage(tabs[0].id, "enable");
+            break;
+
+          default:
+            break;
+        }
+      });
+    });
+  }, []);
+
+  // This function communicates to content.js
+  const handleChange = () => {
+    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      let obj = {};
+      let url = tabs[0].url;
+
+      if (status === "Enabled") {
+        obj[url] = "Disabled";
+        chrome.tabs.sendMessage(tabs[0].id, "disable");
+        setStorage(obj, url);
+      } else if (status === "Disabled") {
+        obj[url] = "Enabled";
+        chrome.tabs.sendMessage(tabs[0].id, "enable");
+        setStorage(obj, url);
+      }
+    });
+  };
+
+  // Util function
+  const setStorage = (obj, url) => {
+    chrome.storage.sync.set(obj, () => {
+      setStatus(obj[url]);
+    });
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <div className="modal-header">
+        <h1 className="logo flex-container">
+          <img
+            className="logo-icon"
+            src={require("./icon150.png")}
+            alt="logo"
+          />
+          <span>Disable Scrolling</span>
+        </h1>
+      </div>
+      <div className="flex-container modal-content">
+        <h4>Current Status: Scrolling {status}</h4>
+        <Switch
+          checked={status === "Disabled"}
+          onChange={handleChange}
+          onColor="#86d3ff"
+          onHandleColor="#2693e6"
+          handleDiameter={30}
+          uncheckedIcon={false}
+          checkedIcon={false}
+          boxShadow="0px 1px 5px rgba(0, 0, 0, 0.6)"
+          activeBoxShadow="0px 0px 1px 10px rgba(0, 0, 0, 0.2)"
+          height={10}
+          width={48}
+          className="react-switch"
+          id="material-switch"
+        />
+      </div>
     </div>
   );
 }
