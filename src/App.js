@@ -1,4 +1,4 @@
-/*global chrome*/
+/*global browser*/
 import React, { useEffect, useState } from "react";
 import Switch from "react-switch";
 import "./App.css";
@@ -9,20 +9,21 @@ function App() {
   // After popup component mounts, set the tate based
   // on the data retrieved from localstorage
   useEffect(() => {
-    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-      chrome.storage.sync.get(`${tabs[0].url}`, (data) => {
+    browser.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+      browser.storage.local.get(`${tabs[0].url}`, (data) => {
         switch (data[tabs[0].url]) {
           case "Disabled":
             setStatus("Disabled");
-            chrome.tabs.sendMessage(tabs[0].id, "disable");
+            browser.tabs.sendMessage(tabs[0].id, "disable");
             break;
 
           case "Enabled":
             setStatus("Enabled");
-            chrome.tabs.sendMessage(tabs[0].id, "enable");
+            browser.tabs.sendMessage(tabs[0].id, "enable");
             break;
 
           default:
+            setStatus("Enabled");
             break;
         }
       });
@@ -31,17 +32,17 @@ function App() {
 
   // This function communicates to content.js
   const handleChange = () => {
-    chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+    browser.tabs.query({ currentWindow: true, active: true }, (tabs) => {
       let obj = {};
       let url = tabs[0].url;
 
       if (status === "Enabled") {
         obj[url] = "Disabled";
-        chrome.tabs.sendMessage(tabs[0].id, "disable");
+        browser.tabs.sendMessage(tabs[0].id, "disable");
         setStorage(obj, url);
       } else if (status === "Disabled") {
         obj[url] = "Enabled";
-        chrome.tabs.sendMessage(tabs[0].id, "enable");
+        browser.tabs.sendMessage(tabs[0].id, "enable");
         setStorage(obj, url);
       }
     });
@@ -49,7 +50,7 @@ function App() {
 
   // Util function
   const setStorage = (obj, url) => {
-    chrome.storage.sync.set(obj, () => {
+    browser.storage.local.set(obj, () => {
       setStatus(obj[url]);
     });
   };

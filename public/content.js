@@ -1,5 +1,5 @@
-/*global chrome*/
-chrome.runtime.onMessage.addListener((request) => {
+/*global browser*/
+browser.runtime.onMessage.addListener((request) => {
   if (request === "disable") {
     // Get the current page scroll position
     let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
